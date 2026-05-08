@@ -45,7 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
         generateBtn.disabled = true;
 
         try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
+            // ✅ تم حل المشكلة هنا بتغيير اسم النموذج إلى gemini-1.5-flash
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
             
             let parts = [];
             
@@ -81,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) {
                 if (response.status === 400 && data.error?.message.includes("API key not valid")) {
-                    localStorage.removeItem('gemini_api_key'); // إزالة المفتاح الخاطئ
+                    localStorage.removeItem('gemini_api_key'); 
                     throw new Error('مفتاح API غير صالح. يرجى المحاولة مرة أخرى وإدخال مفتاح صحيح.');
                 }
                 throw new Error(data.error?.message || 'خطأ في جلب البيانات من الخادم');
