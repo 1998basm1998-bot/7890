@@ -13,24 +13,31 @@ document.addEventListener('DOMContentLoaded', () => {
     let base64Image = null;
     let mimeType = null;
 
-    // 🔴 دالة احترافية لإظهار الخطأ وتحديد مصدره (Google أو الكود)
+    // 🔴 دالة احترافية لإظهار الخطأ وتحديد مصدره
     function showError(source, title, message) {
         let sourceLabel = source === 'google' ? '🌐 خطأ من خوادم جوجل' : '💻 خطأ في النظام الداخلي';
         let sourceClass = source === 'google' ? 'source-google' : 'source-system';
         
-        smartErrorBox.innerHTML = `
-            <div class="error-header">
-                <span class="error-badge ${sourceClass}">${sourceLabel}</span>
-                <strong>${title}</strong>
-            </div>
-            <div class="error-body" dir="ltr">${message}</div>
-        `;
-        smartErrorBox.style.display = 'block';
+        if (smartErrorBox) {
+            smartErrorBox.innerHTML = `
+                <div class="error-header">
+                    <span class="error-badge ${sourceClass}">${sourceLabel}</span>
+                    <strong>${title}</strong>
+                </div>
+                <div class="error-body" dir="ltr">${message}</div>
+            `;
+            smartErrorBox.style.display = 'block';
+        } else {
+            // في حال نسيان إضافة الصندوق في HTML، يتم عرض الخطأ كنافذة عادية
+            alert(title + "\n" + message.replace(/<[^>]*>?/gm, ''));
+        }
     }
 
-    // 🟢 دالة لإخفاء صندوق الخطأ عند محاولة توليد جديدة
+    // 🟢 دالة لإخفاء صندوق الخطأ
     function hideError() {
-        smartErrorBox.style.display = 'none';
+        if (smartErrorBox) {
+            smartErrorBox.style.display = 'none';
+        }
     }
 
     uploadArea.addEventListener('click', () => {
@@ -55,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     generateBtn.addEventListener('click', async () => {
-        hideError(); // تنظيف الأخطاء السابقة
+        hideError(); // إخفاء الأخطاء السابقة عند محاولة جديدة
         
         const title = titleInput.value.trim();
         if (!title) {
@@ -63,15 +70,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const API_KEY = "AIzaSyAHUttJLiVjNTUHMPThR4qRFLiyb8nncLc";
+        // ✅ تم وضع مفتاحك الجديد هنا بنجاح!
+        const API_KEY = "AIzaSyBmIXeA54jryMvEb-eCgCiVHVQae-LHvMs";
 
         const originalBtnHtml = generateBtn.innerHTML;
         generateBtn.innerHTML = '⏳ جاري الاتصال والتحليل...';
         generateBtn.disabled = true;
 
         try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
-            
             let parts = [];
             if (base64Image && mimeType) {
                 parts.push({ "inlineData": { "mimeType": mimeType, "data": base64Image } });
@@ -82,50 +88,72 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const payload = { contents: [{ parts: parts }] };
 
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            // ==========================================
+            // دمج نظام التبديل الذكي: تجربة النماذج بصمت
+            // ==========================================
+            const modelsToTry = (base64Image) ? 
+                ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro-vision-latest"] : 
+                ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"];
 
-            const data = await response.json();
+            let success = false;
+            let lastErrorDetails = "";
+            let lastErrorStatus = 0;
 
-            // ===============================================
-            // 🔍 نظام تشخيص أخطاء جوجل API وتحليل كود الرد
-            // ===============================================
-            if (!response.ok) {
-                let errorDetails = data.error?.message || "رسالة خطأ غير معروفة من الخادم";
-                let errorTitle = `كود الخطأ: HTTP ${response.status}`;
-                let solution = "";
-                
-                if (response.status === 400 && errorDetails.includes("API key")) {
-                    errorTitle = "مفتاح API غير صالح";
-                    solution = "يرجى التأكد من أن مفتاح جوجل الخاص بك صحيح وتم نسخه بالكامل.";
-                } else if (response.status === 403) {
-                    errorTitle = "الوصول مرفوض (Forbidden)";
-                    solution = "قد تكون الخدمة محظورة في بلدك أو أن مفتاحك مقيد. جرب تشغيل VPN.";
-                } else if (response.status === 404) {
-                    errorTitle = "النموذج غير مدعوم بمفتاحك";
-                    solution = "مفتاحك الحالي لا يمتلك صلاحية الوصول لنموذج (gemini-1.5-flash). تحتاج لاستخراج مفتاح جديد من مشروع مختلف في Google AI Studio.";
+            for (const model of modelsToTry) {
+                try {
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`;
+                    
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await response.json();
+
+                    // إذا نجح التوليد، نضع النص في المربع ونخرج من الحلقة فوراً
+                    if (response.ok && data.candidates && data.candidates.length > 0) {
+                        descriptionInput.value = data.candidates[0].content.parts[0].text;
+                        success = true;
+                        break; 
+                    } else {
+                        // إذا فشل هذا النموذج، نحفظ الخطأ ونجرب النموذج الذي بعده
+                        lastErrorDetails = data.error?.message || "رسالة خطأ غير معروفة من الخادم";
+                        lastErrorStatus = response.status;
+                        
+                        // إذا كان الخطأ هو أن المفتاح غير صالح أساساً، فلا داعي لتجربة الباقي
+                        if (response.status === 400 && lastErrorDetails.includes("API key")) {
+                            break; 
+                        }
+                    }
+                } catch (err) {
+                    lastErrorDetails = err.message;
                 }
-                
-                let finalMessage = `${errorDetails}<br><br><span dir="rtl" style="color:#000; display:block; margin-top:10px;">💡 <b>تفسير النظام:</b> ${solution}</span>`;
-                showError('google', errorTitle, finalMessage);
-                return;
             }
 
-            // في حال نجاح التوليد
-            if (data.candidates && data.candidates.length > 0) {
-                const generatedText = data.candidates[0].content.parts[0].text;
-                descriptionInput.value = generatedText;
-            } else {
-                showError('google', 'استجابة فارغة (Empty Response)', 'نجح الاتصال بجوجل، ولكن الذكاء الاصطناعي لم يرسل أي نص في الوصف!');
+            // إذا فشلت كل النماذج، نظهر الصندوق الأحمر
+            if (!success) {
+                let errorTitle = `فشل جميع النماذج (HTTP ${lastErrorStatus})`;
+                let solution = "";
+                
+                if (lastErrorStatus === 400 && lastErrorDetails.includes("API key")) {
+                    errorTitle = "مفتاح API غير صالح";
+                    solution = "يرجى التأكد من أن مفتاح جوجل الجديد الخاص بك صحيح وتم نسخه بالكامل.";
+                } else if (lastErrorStatus === 403 || lastErrorDetails.includes("User location is not supported")) {
+                    errorTitle = "الوصول مرفوض جغرافياً (Forbidden)";
+                    solution = "بما أنك متواجد في دولة تحظرها جوجل (مثل العراق 🇮🇶)، فإن الخدمة مرفوضة. <br><br><b>الحل: الرجاء تشغيل تطبيق (VPN) على هاتفك والمحاولة مرة أخرى، وسيعمل التوليد فوراً.</b>";
+                } else {
+                    errorTitle = "النماذج غير مدعومة بمفتاحك نهائياً";
+                    solution = "المفتاح الحالي يرفض جميع نماذج الذكاء الاصطناعي. يجب استخراج مفتاح جديد.";
+                }
+                
+                let finalMessage = `${lastErrorDetails}<br><br><span dir="rtl" style="color:#000; display:block; margin-top:10px;">💡 <b>تفسير النظام:</b> ${solution}</span>`;
+                showError('google', errorTitle, finalMessage);
             }
 
         } catch (error) {
             console.error(error);
-            // أخطاء مثل انقطاع الإنترنت أو مشكلة في كتابة الأكواد
-            showError('system', 'فشل في الاتصال بالخادم', error.message + "<br><br><span dir='rtl' style='color:#000; display:block;'>💡 <b>السبب الشائع:</b> انقطاع في الإنترنت أو وجود إضافة (AdBlocker) تمنع المتصفح من الاتصال بخوادم جوجل.</span>");
+            showError('system', 'فشل في الاتصال', error.message + "<br><br><span dir='rtl' style='color:#000; display:block;'>💡 <b>السبب الشائع:</b> انقطاع في الإنترنت أو وجود إضافة تمنع المتصفح من الاتصال بخوادم جوجل.</span>");
         } finally {
             generateBtn.innerHTML = originalBtnHtml;
             generateBtn.disabled = false;
