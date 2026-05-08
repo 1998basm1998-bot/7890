@@ -38,14 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const API_KEY = "AIzaSyAHUttJLiVjNTUHMPThR4qRFLiyb8nncLc";
+
         const originalBtnHtml = generateBtn.innerHTML;
         generateBtn.innerHTML = '⏳ جاري التوليد...';
         generateBtn.disabled = true;
 
         try {
-            // قم بوضع مفتاح API الخاص بك من Google AI Studio هنا
-            const API_KEY = "ضع_مفتاح_API_الخاص_بك_هنا"; 
-            
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
             
             let parts = [];
@@ -81,6 +80,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (!response.ok) {
+                if (response.status === 400 && data.error?.message.includes("API key not valid")) {
+                    localStorage.removeItem('gemini_api_key'); // إزالة المفتاح الخاطئ
+                    throw new Error('مفتاح API غير صالح. يرجى المحاولة مرة أخرى وإدخال مفتاح صحيح.');
+                }
                 throw new Error(data.error?.message || 'خطأ في جلب البيانات من الخادم');
             }
 
