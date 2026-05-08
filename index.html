@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تروني - لوحة تحكم الإدارة</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>تروني<span>.</span></h1>
+                <p>لوحة تحكم الإدارة</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="active">إضافة منتج</a>
+                <a href="#">المنتجات</a>
+                <a href="#">الطلبات</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="main-header">
+                <h2>إضافة منتج جديد</h2>
+                <p>قم بإدخال تفاصيل المنتج وتوليد وصف تسويقي ذكي.</p>
+            </header>
+
+            <div class="card">
+                <div class="form-group">
+                    <label for="title">عنوان المنتج</label>
+                    <input type="text" id="title" placeholder="مثال: حذاء رياضي نايك اير ماكس">
+                </div>
+
+                <div class="form-group">
+                    <label>صورة المنتج</label>
+                    <div class="upload-area" id="uploadArea">
+                        <div id="uploadPlaceholder">
+                            <span class="icon">📷</span>
+                            <p>اضغط لرفع صورة المنتج</p>
+                            <small>PNG, JPG بحد أقصى 5 ميجابايت</small>
+                        </div>
+                        <img id="imagePreview" src="" alt="Preview" style="display: none;">
+                    </div>
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                </div>
+
+                <div class="form-group">
+                    <div class="description-header">
+                        <label for="description">الوصف</label>
+                        <button type="button" id="generateBtn" class="btn-generate">
+                            <span class="icon">✨</span> توليد الوصف بالذكاء الاصطناعي
+                        </button>
+                    </div>
+                    <textarea id="description" rows="7" placeholder="يمكنك كتابة الوصف يدوياً هنا، أو استخدام الذكاء الاصطناعي لتوليده..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn-submit">حفظ المنتج</button>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
